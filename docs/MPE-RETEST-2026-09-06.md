@@ -10,6 +10,9 @@ experiments are excluded. Per-file source hashes are in `mpe/source-lock.json`;
 `mpe/tools/sync-host.mjs` refreshes the generic files from a committed revision
 while preserving the documented platform adapters.
 
+Firmware source is recorded in commit `437a8ffdc6dfbaf144d8886bd0cb5fe16db27235`.
+Subsequent review documentation changes do not alter the built firmware inputs.
+
 Build with the existing `mpe/Build.ps1` command. Output:
 `TeensyROM+_0.8.0.4_MPE-review2_full.hex`
 
@@ -20,6 +23,8 @@ images compile; memory boundaries, updater staging space, package preflight,
 launch routing, generic file services, packet replay and current video host
 tests pass. The same 219 upstream files remain unchanged. These checks do not
 establish physical boot, Doom gameplay or a fix for the reported failure.
+The [machine-readable verification result](../mpe/review/review2-verification.json)
+records this HEX and the exact Doom package pairing.
 
 The current public Doom package already matches the committed development
 package. Its files were used unchanged for preflight:

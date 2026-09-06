@@ -1,4 +1,8 @@
-# MPE upstream integration: review results
+# MPE upstream integration: initial review1 results
+
+Historical baseline record. The current build uses the 1.1.12 shared host and
+the newer four-level Doom package; see [review2 retest results](MPE-RETEST-2026-09-06.md).
+The firmware and package hashes below identify the earlier review1 pairing.
 
 Date: 2026-09-05. Status: **build and host checks pass; physical acceptance pending**.
 DoomVM is the only VM selected for public shipment. This branch contains generic

@@ -39,7 +39,8 @@ Install this candidate's full HEX through the existing TeensyROM updater for
 PCB v0.4, then place DoomVM's launcher and `VMS/DOOMVM/` directory on SD. Select
 `DOOMVM.crt` through Travis's normal browser. The package supplies its own C64
 client, engine and presentation; follow its instructions for game data. The
-current Doom release supports E1M1; saving and later levels are not supported.
+current Doom release follows E1M1, E1M4, E1M5 and E1M8; saving is not supported.
+Physical testing of that package with this firmware remains pending.
 A registered `.gbd` file on SD can also launch the installed DoomVM directly.
 Reset/menu-button exit returns to Travis's interface and skips autolaunch once.
 
@@ -76,7 +77,7 @@ or publish anything. Use a short output directory because the Windows ARM
 toolchain still encounters path-length limits. Each run has its own directory;
 `latest.json` identifies its HEX, hashes, source inputs and memory layout.
 
-The output is named `TeensyROM+_0.8.0.4_MPE-review1_full.hex` for this upstream
+The output is named `TeensyROM+_0.8.0.4_MPE-review2_full.hex` for this upstream
 revision. The visible stock firmware version remains unchanged; identify this
 review build by its filename and SHA-256. The original stock build script is
 unchanged. For comparison builds with the isolated builder:
@@ -125,7 +126,9 @@ testing. Build success and memory bounds do not establish that acceptance.
 
 Base: upstream `442aaaa266f3306ba30dd925235939ee3878db77` (2026-08-31).
 Shared MPE code: Custom GUI revision
-`1dde1563ba2cea31761d04300b6d962ae2ec5ca2` (2026-09-05), ABI 2.
+`69a711a42fd8e07d7857872073c9d2c7dee5bcc9`, ABI 2, shared host version 1.1.12.
+This matches the host source used by the public GUI firmware 1.1.12. The Doom
+module and launcher are unchanged; uncommitted development experiments are excluded.
 See [source-lock.json](../mpe/source-lock.json) for the imported file hashes.
 The imported VM loader, ABI, file services, packet replay and video code retain
 their source provenance. The dedicated boot sketch adapts request consumption
@@ -167,9 +170,11 @@ adds their compatibility checks. Passing those checks is not release approval.
 No other VM downloads or payloads are part of this review.
 
 The verification report explicitly distinguishes host/image checks from physical
-hardware acceptance. Before merge/release, test Doom E1M1 gameplay, PAL/NTSC transport,
+hardware acceptance. Before merge/release, test Doom gameplay and level transitions, PAL/NTSC transport,
 input, sound, reset/menu return, missing SD and interrupted launch recovery,
 normal/large CRTs including active bank swapping, stock networking/USB/MIDI,
 REU/freezer/KERNAL functionality, settings retention and the firmware updater.
 Compare with the unmodified build on the same hardware. See the accompanying
-[review results](MPE-REVIEW-RESULTS.md) for measured evidence and remaining checks.
+[current retest results](MPE-RETEST-2026-09-06.md) for measured evidence and
+remaining checks. The [initial review1 results](MPE-REVIEW-RESULTS.md) are retained
+as historical baseline evidence.
