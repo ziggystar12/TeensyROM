@@ -3,6 +3,7 @@
 #include <cstring>
 #include <initializer_list>
 #include "../abi/vm_abi.h"
+#include "../video/mpe_video_camera.h"
 #define FeatVMVideoDMA
 #define Fab04_FullDMACapable
 static uint8_t EZFlashRAM[256],c64[65536];
@@ -21,7 +22,7 @@ namespace VmRuntime {
 static const VmModule *module;static VmPacket packet;
 static bool active=true,started=true,startRequested,inputPending,pending,quietRequested,packetReplayRequested;
 static uint8_t failure,sequence,videoTiming=0x83;static uint32_t sliceStarted;static VmInput input;
-static struct {bool configured,hostPacket;uint8_t phase,preferred,capabilities,requested;uint16_t geometry;} indexedVideo{};
+static struct {bool configured,hostPacket;uint8_t phase,preferred,capabilities,requested;uint16_t geometry;mpe_video::CropCamera camera;} indexedVideo{};
 static unsigned pumps,acks,offers;static bool offer=true;
 static void fail(uint8_t e){failure=e;}
 static uint16_t crc16(const uint8_t *p,unsigned n){uint16_t c=65535;while(n--){c^=uint16_t(*p++)<<8;for(unsigned b=0;b<8;b++)c=(c<<1)^((c&0x8000)?0x1021:0);}return c;}

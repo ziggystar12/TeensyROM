@@ -31,6 +31,7 @@ for(const input of build.inputs)assert.equal(sha(path.join(root,input.path)),inp
 logs.push(run(process.execPath,['--test','mpe/tools/hex.test.mjs']));
 native('files_test',[fs.mkdtempSync(path.join(output,'files-sandbox-'))]);
 native('packet_replay_test');native('mpe_video_live_test',[path.join(output,'kernel')]);
+native('mpe_video_crop_test');native('mpe_video_detail_test');native('mpe_video_sprite_test');
 if(process.platform==='win32')native('indexed_host_test');
 const fixture=registryFixture(fs.mkdtempSync(path.join(output,'synthetic-fixture-')));
 native('registry_test',[fixture,fs.mkdtempSync(path.join(output,'registry-sandbox-'))]);

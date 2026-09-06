@@ -1,10 +1,10 @@
 {
   "repository": "https://github.com/ziggystar12/Teensy-Rom-Custom-GUI",
-  "revision": "1dde1563ba2cea31761d04300b6d962ae2ec5ca2",
+  "revision": "69a711a42fd8e07d7857872073c9d2c7dee5bcc9",
   "files": [
     {
       "path": "Source/Teensy/MinimalBoot/Common/VMABI.h",
-      "sha256": "aedab5d441f422f6aed19ac4c9f96f1d1583b4858bbf4a17d97e2cc871f6071a"
+      "sha256": "4b5c0cd7193bf552f7c0b4911eb45991af08fa21f257da3c072ea473e0ebc393"
     },
     {
       "path": "Source/Teensy/MinimalBoot/Common/VMRegistry.h",
@@ -24,11 +24,11 @@
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMHostPoll.h",
-      "sha256": "693f83aeb137cdca5c1a50ea69b82a606c370b822b261a946bdf02a32f95ef35"
+      "sha256": "211826e37f1407f24c12efb80e5565340adc07ab7b4d39982204725924a98aca"
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMIndexedVideo.h",
-      "sha256": "3fbfe69dfa547838d4f8643c709e00f29573a953677a22311b3ec3a6a2fdec17"
+      "sha256": "d45e2cd21ae55fa4c0be1e91e4e94ceaca981312f12d52b954747fabafea074c"
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMPacketReplay.h",
@@ -64,11 +64,11 @@
     },
     {
       "path": "vm/video/mpe_video_live.cpp",
-      "sha256": "8a1c92225d8441e38e95028bad6d8b7b7e4cf5d96db1707859651288f273dbb9"
+      "sha256": "9c13cb6b369cef8745ac478800f76694e750647789016b1dee681e6a452b35a3"
     },
     {
       "path": "vm/video/mpe_video_live.h",
-      "sha256": "4d61c9eaa0eb70fe036c5ae1e25ad874cbc35e1ae24fd57cb04f5ba00432ff38"
+      "sha256": "7c038d8cf6848efcf7d003e8f85c7fef0b9902a8a0d99742cd03b7628d58330f"
     },
     {
       "path": "vm/video/mpe_video_policy.h",
@@ -96,11 +96,11 @@
     },
     {
       "path": "vm/tests/packet_replay_test.cpp",
-      "sha256": "c7cb7e1f0e6f1687c88ca3a17420b76e9f6d265bcc8d4d5bbd9d7fbc2239b5c2"
+      "sha256": "68bdf2d629320bd1a34cd665e89a270aa4686b05b90ee07788a1c2c2e85df077"
     },
     {
       "path": "vm/tests/indexed_host_test.cpp",
-      "sha256": "3599f348fea43311176e8c6f614c9d2817c1c48797e675c0e4eb3f15ea05afec"
+      "sha256": "4309e96f7458b9b2a6b204727fb0ecd3f2905c3b204d935cb727945dfccc947f"
     },
     {
       "path": "vm/tests/mpe_video_live_test.cpp",
@@ -119,6 +119,26 @@
       "path": "mpe/host/Min_TeensyROM.h",
       "sourcePath": "Source/Teensy/MinimalBoot/Min_TeensyROM.h",
       "sha256": "bb960f90dbb83ad0304d9bfa8bb4ef88943ec7b9722b7e90fbfee7540091d056"
+    },
+    {
+      "path": "vm/video/mpe_video_camera.h",
+      "sha256": "8e88a090a6fa01f02b3f05204e75a5c5a8e38902a623cb15bb2c9c036d537bad"
+    },
+    {
+      "path": "vm/video/mpe_video_sprites.h",
+      "sha256": "b2e42bbc9f69c9d2c6f2887ab2758cbc84b05b117fa1921c61c03dc8e6622bab"
+    },
+    {
+      "path": "vm/tests/mpe_video_crop_test.cpp",
+      "sha256": "bade72b15b68bde18e3bbea3368ed3b94c7a8f99d1214acc4f60bc7de3933426"
+    },
+    {
+      "path": "vm/tests/mpe_video_detail_test.cpp",
+      "sha256": "cc544fac8e6de3e9fbb9a5c4c6a407d41a50efc7ae86532cf0c06d687732cdb4"
+    },
+    {
+      "path": "vm/tests/mpe_video_sprite_test.cpp",
+      "sha256": "bfa408a39c4594119f0dc1e978211770d62050940265290007e5a6c1bde73567"
     }
   ],
   "adaptations": [

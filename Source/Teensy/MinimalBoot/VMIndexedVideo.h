@@ -3,6 +3,7 @@
 #define MPE_VIDEO_CODE FLASHMEM
 #include "vm/video/mpe_video_live.cpp"
 #include "vm/video/mpe_video_kernel.h"
+#include "vm/video/mpe_video_camera.h"
 #undef MPE_VIDEO_CODE
 
 namespace VmRuntime {
@@ -18,6 +19,7 @@ struct IndexedVideoState {
     bool bankValid[2],kernelNeeded;
     uint16_t uploadedBytes;
     uint16_t geometry;
+    mpe_video::CropCamera camera;
 };
 static IndexedVideoState indexedVideo{};
 static volatile bool videoBorderWaiting,videoBorderGrant;
@@ -50,7 +52,7 @@ static bool videoRange(const void *p,uint32_t bytes){
 static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
     if(!setup||setup->bytes!=sizeof(*setup)||setup->workspace_bytes<VM_INDEXED_VIDEO_WORKSPACE_BYTES||
        ((uintptr_t)setup->workspace&3)||!videoRange(setup->workspace,VM_INDEXED_VIDEO_WORKSPACE_BYTES)||
-       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~127))return false;
+       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~1023))return false;
     indexedVideo={};videoBorderWaiting=videoBorderGrant=false;auto p=(uint8_t *)setup->workspace;memset(p,0,VM_INDEXED_VIDEO_WORKSPACE_BYTES);
     indexedVideo.frame=(mpe_video::LiveFrame *)p;p+=sizeof(mpe_video::LiveFrame);
     indexedVideo.converter=(mpe_video::LiveConverter *)p;p+=sizeof(mpe_video::LiveConverter);
@@ -87,16 +89,23 @@ static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
     }else if(source->stride<source->width||source->pixel_bytes<uint32_t(source->stride)*source->height||
              !videoRange(source->pixels,source->pixel_bytes))return VmVideoResult::Failed;
     if(DMA_State!=DMA_S_DisableReady)return VmVideoResult::Busy;
-    const bool direct=v.displayReady&&!v.activeBank&&!v.frame->mask&&v.frame->mode==v.requested&&(v.requested==0||v.requested==3);
-    const bool streaming=v.displayReady&&(videoTiming&2)&&(v.requested==1||v.requested==2);
-    const mpe_video::IndexedSource s{source->pixels,source->palette,source->width,source->height,source->stride,source->colors,
-        uint16_t((reader?reader->geometry:v.geometry&59)|(v.geometry&VM_INDEXED_STABLE_RASTER)),reader?reader->read_pixel:nullptr,reader?reader->context:nullptr};
+    const bool sprites=v.requested==2&&(v.geometry&VM_INDEXED_SPRITE_F5);
+    const bool crop=v.requested==1&&(v.geometry&VM_INDEXED_CROP_F3);
+    const bool direct=v.displayReady&&!v.activeBank&&!v.frame->mask&&v.frame->mode==v.requested&&(v.requested==0||v.requested==3||sprites||crop);
+    // Sprite F5 uses the ordinary held-DMA path. A transition to/from a timed
+    // mode pauses at the border, clearing sprites before any FLI kernel runs.
+    const bool streaming=v.displayReady&&!v.frame->overlays&&!v.frame->multicolor&&!sprites&&!crop&&(videoTiming&2)&&(v.requested==1||v.requested==2);
+    mpe_video::IndexedSource s{source->pixels,source->palette,source->width,source->height,source->stride,source->colors,
+        uint16_t((reader?reader->geometry:v.geometry&59)|(v.geometry&(VM_INDEXED_STABLE_RASTER|VM_INDEXED_SPRITE_F5|VM_INDEXED_SPRITE_TAGS|VM_INDEXED_CROP_F3))),reader?reader->read_pixel:nullptr,reader?reader->context:nullptr};
+    if(crop){v.camera.position(source->width,source->height,micros());s.crop_x=v.camera.x;s.crop_y=v.camera.y;}
     if(!v.converter->render(s,v.requested,*v.frame,v.frame))return VmVideoResult::Failed;
     if(reader)reader->source_consumed=1;
     // Plain Color/Sharp retain the speed candidate's single held-DMA path.
     // Only mode transitions and timed raster kernels require pause/resume.
     if(direct){
-        if(!transferIndexedVideo())return VmVideoResult::Failed;
+        const bool unchanged=(sprites||crop)&&v.bank[0]&&v.bankValid[0]&&v.frame->background==v.bank[0]->background&&
+            !memcmp(v.frame->cells,v.bank[0]->cells,sizeof v.frame->cells);
+        if(!unchanged&&!transferIndexedVideo())return VmVideoResult::Failed;
         source->resolved_mode=v.frame->mode;if(reader)reader->resolved_background=v.frame->background;
         return VmVideoResult::Transferred;
     }
@@ -112,7 +121,7 @@ static FLASHMEM bool indexedVideoPacket(VmPacket &packet){
     auto &v=indexedVideo;if(v.phase!=1&&v.phase!=3&&v.phase!=5&&v.phase!=7)return false;
     packet={};packet.type=5;packet.length=3;
     packet.payload[0]=v.phase==1?1:v.phase==3?2:v.phase==5?3:4;
-    packet.payload[1]=v.frame->mode;packet.payload[2]=(v.frame->mask!=0)|((v.phase==5||v.phase==7)?v.targetBank<<1:0);
+    packet.payload[1]=v.frame->mode;packet.payload[2]=(v.frame->mask!=0)|(v.frame->overlays?4:0)|(v.frame->multicolor?8:0)|((v.phase==5||v.phase==7)?v.targetBank<<1:0);
     if(v.frame->background){packet.length=4;packet.payload[3]=v.frame->background;}
     return true;
 }
@@ -126,12 +135,24 @@ static FLASHMEM bool transferIndexedVideo(){
         if(!started){if(!PerformDMA(false,address,data,bytes,false))return false;started=true;return true;}
         return AGIContinueDMA(false,address,data,bytes,false);
     };
+    // Disable sprites while replacing their patterns. Only negotiated sprite
+    // clients use this plane; legacy modules retain their original traffic.
+    uint8_t zero=0;
+    if(v.frame->overlays)okay=segment(0xd015,&zero,1);
     for(unsigned y=0;y<25&&okay;y++){
         for(unsigned x=0;x<40;x++){auto cell=v.frame->cells[y*40+x];memcpy(row+x*8,cell,8);row[320+x]=cell[8];row[360+x]=cell[9];}
         okay=segment(0x6000+y*320,row,320)&&segment(0x5c00+y*40,row+320,40)&&
-            segment(v.frame->mode==0?0xd800+y*40:0x5800+y*40,row+360,40);
+            segment(v.frame->mode==0||v.frame->multicolor?0xd800+y*40:0x5800+y*40,row+360,40);
     }
     if(okay)okay=segment(0xd021,&v.frame->background,1);
+    if(okay&&v.frame->overlays){
+        for(unsigned i=0;i<17;i++)row[i]=v.frame->cells[512+i][9];
+        okay=segment(0xd000,row,17);
+        for(unsigned i=0;i<8;i++){row[i]=v.frame->cells[530+i][9];row[8+i]=0x60+i;}
+        if(okay)okay=segment(0xd027,row,8)&&segment(0x5ff8,row+8,8)&&
+            segment(0xd017,&zero,1)&&segment(0xd01b,&zero,1)&&segment(0xd01c,&zero,1)&&segment(0xd01d,&zero,1);
+        if(okay)okay=segment(0xd015,&v.frame->cells[529][9],1);
+    }
     if(okay&&v.frame->mask)okay=segment(0x3000,v.kernel,v.kernelBytes);
     bool closed=started&&CloseDMA();if(!okay||!closed){if(DMA_State!=DMA_S_DisableReady)AGIDMAEmergencyRelease();return false;}
     if(v.bank[0]){*v.bank[0]=*v.frame;v.bankValid[0]=true;}

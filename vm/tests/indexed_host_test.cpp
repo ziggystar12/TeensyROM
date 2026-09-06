@@ -11,6 +11,8 @@
 enum {DMA_S_DisableReady,DMA_S_Active};
 static unsigned DMA_State,nS_DMASetup,nS_MaxAdj;
 static uint32_t ARM_DWT_CYCCNT;
+static uint32_t clockUs;
+static uint32_t micros(){return clockUs;}
 static constexpr uint32_t F_CPU_ACTUAL=600000000;
 static constexpr unsigned Def_nS_DMASetupNTSC=1,Def_nS_DMASetupPAL=2,Def_nS_MaxAdjNTSC=3,Def_nS_MaxAdjPAL=4;
 static uint8_t c64[65536];static unsigned segments;static bool dmaFail;
@@ -200,7 +202,71 @@ int main(){
         indexedVideoAck();assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&fixed.resolved_mode==2);
     }
     puts("PASS: opt-in stable F5 through actual host, changing pictures reuse both raster programs");
-    setup.reserved=128;assert(!configureIndexedVideo(&setup));
+    setup.reserved=1024;assert(!configureIndexedVideo(&setup));
+    // Negotiated F5 uses the existing image allocation and ordinary DMA,
+    // even with streaming-capable clients. No border grants or FLI kernel.
+    setup.reserved=VM_INDEXED_SPRITE_F5|VM_INDEXED_SPRITE_TAGS;
+    assert(configureIndexedVideo(&setup));
+    fixed.width=fixed.stride=256;fixed.height=240;fixed.pixel_bytes=256*240;
+    for(unsigned y=0;y<240;y++)for(unsigned x=0;x<256;x++)context->pixels[y*256+x]=64|((x+y)%4);
+    fixed.generation++;assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&indexedVideo.phase==1);
+    assert(indexedVideo.frame->overlays&&!indexedVideo.frame->mask&&!videoBorderWaiting);
+    assert(indexedVideoPacket(packet)&&packet.payload[2]==4);
+    const auto spriteFrozen=*indexedVideo.frame;const auto generation=fixed.generation;
+    fixed.generation++;assert(submitIndexedVideo(&fixed)==VmVideoResult::Failed);fixed.generation=generation;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&!memcmp(&spriteFrozen,indexedVideo.frame,sizeof spriteFrozen));
+    indexedVideoAck();assert(transferIndexedVideo());indexedVideo.phase=3;indexedVideoAck();
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred);
+    assert(c64[0xd015]&&c64[0xd015]==indexedVideo.frame->cells[529][9]);
+    for(unsigned i=0;i<8;i++)assert(c64[0x5ff8+i]==0x60+i);
+    for(unsigned i=0;i<17;i++)assert(c64[0xd000+i]==indexedVideo.frame->cells[512+i][9]);
+    const unsigned spriteBefore=segments;fixed.generation++;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&segments==spriteBefore); // exact resident repeat: zero DMA
+    context->pixels[0]=64|3;fixed.generation++;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&segments==spriteBefore+85);
+    assert(!indexedVideoPacket(packet)&&!videoBorderWaiting);
+    // Both hires modes retain black 32-pixel NES side margins, including the
+    // actual sprite positions; every nonblack overlay stays within source.
+    for(unsigned y=0;y<200;y++)for(unsigned x=0;x<320;x++)if(x<32||x>=288){
+        const auto c=indexedVideo.frame->cells[y/8*40+x/8];assert(c[8]==0);
+        for(unsigned n=0;n<8;n++)if(c64[0xd015]&(1<<n)){
+            const int dx=int(x)+24-int(c64[0xd000+n*2]+((c64[0xd010]&(1<<n))?256:0));
+            const int dy=int(y)+50-int(c64[0xd001+n*2]);
+            if(dx>=0&&dx<24&&dy>=0&&dy<21)assert(!(c64[0x5800+n*64+dy*3+dx/8]&(128>>(dx%8))));
+        }
+    }
+    indexedVideo.requested=1;fixed.generation++;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&indexedVideo.phase==1); // never stream sprites into FLI
+    indexedVideoAck();assert(transferIndexedVideo());indexedVideo.phase=3;indexedVideoAck();
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred);
+    puts("PASS: sprite F5 negotiated, frozen generation, 85-segment ordinary DMA, no raster grants, centered NES margins and timed-mode transition pause");
+    setup.reserved=VM_INDEXED_SPRITE_F5|VM_INDEXED_SPRITE_TAGS|VM_INDEXED_CROP_F3;setup.default_mode=0;
+    assert(configureIndexedVideo(&setup));indexedVideo.requested=1;indexedVideo.camera.input(1,0,clockUs);
+    for(unsigned y=0;y<240;y++)for(unsigned x=0;x<256;x++)context->pixels[y*256+x]=64|((x+y/3+x/11)%4);
+    fixed.generation++;assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&indexedVideo.phase==1);
+    assert(indexedVideo.camera.x==48&&indexedVideo.camera.y==20&&indexedVideo.frame->multicolor&&!indexedVideo.frame->mask&&!videoBorderWaiting);
+    const auto cropFrozen=*indexedVideo.frame;assert(indexedVideoPacket(packet)&&packet.payload[1]==1&&packet.payload[2]==8);
+    indexedVideo.camera.input(1,8,clockUs);clockUs+=80000;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&!memcmp(&cropFrozen,indexedVideo.frame,sizeof cropFrozen));
+    assert(indexedVideo.camera.x==48); // held input cannot change a frozen transfer
+    const auto cropBefore=segments;indexedVideoAck();assert(transferIndexedVideo());assert(segments==cropBefore+76);
+    indexedVideo.phase=3;assert(indexedVideoPacket(packet)&&packet.payload[0]==2&&packet.payload[2]==8);indexedVideoAck();
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&fixed.resolved_mode==1);
+    const auto checkCrop=[&](){for(unsigned y=0;y<200;y++)for(unsigned x=0;x<160;x++){
+        const auto c=y/8*40+x/4;const uint8_t colors[]={c64[0xd021],uint8_t(c64[0x5c00+c]>>4),uint8_t(c64[0x5c00+c]&15),c64[0xd800+c]};
+        const auto value=colors[(c64[0x6000+c*8+y%8]>>(6-2*(x%4)))&3];
+        assert(value==(context->pixels[(y+indexedVideo.camera.y)*256+x+indexedVideo.camera.x]&63));
+    }};checkCrop();
+    fixed.generation++;assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&indexedVideo.camera.x>48&&!indexedVideo.phase);checkCrop();
+    indexedVideo.camera.input(1,0,clockUs);const auto repeated=segments;fixed.generation++;
+    assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred&&segments==repeated&&!videoBorderWaiting);
+    for(uint8_t mode:{2,3,0,1}){
+        indexedVideo.camera.input(mode,0,clockUs);indexedVideo.requested=mode;fixed.generation++;
+        assert(submitIndexedVideo(&fixed)==VmVideoResult::Busy&&indexedVideo.phase==1&&!videoBorderWaiting);
+        indexedVideoAck();assert(transferIndexedVideo());indexedVideo.phase=3;indexedVideoAck();assert(submitIndexedVideo(&fixed)==VmVideoResult::Transferred);
+    }
+    assert(indexedVideo.camera.x==48&&indexedVideo.camera.y==20);checkCrop();
+    puts("PASS: F3 native crop through actual host, ordinary color-RAM DMA, frozen camera during ACK, zero-DMA repeat and F5/F7/F1/F3 transitions");
 #endif
     VirtualFree(arena,0,MEM_RELEASE);
     puts("PASS: indexed bounds/lifecycle, centered geometry, legacy restoration, inactive-bank PAL/NTSC sliced uploads, expired grants, atomic ACK ownership, picker reinitialization, DMA failure release");

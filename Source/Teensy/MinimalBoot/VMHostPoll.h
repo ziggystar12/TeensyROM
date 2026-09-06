@@ -6,9 +6,14 @@ void VMHostPoll(){
     if(!started||failure||!module)return;
     if(inputPending){VmInput in{input.buttons,input.display,input.overflow,input.protocol};inputPending=false;
         if(in.protocol==0x90||(in.protocol==0x83&&!(indexedVideo.geometry&VM_INDEXED_SEPARATE_SELECTORS))){
-            if(indexedVideo.configured&&in.display<4){
-                const uint8_t mode=in.display==0?indexedVideo.preferred:in.display;
-                if(indexedVideo.capabilities&(1u<<mode))indexedVideo.requested=mode;
+            const bool cropInput=in.protocol==0x83&&(indexedVideo.geometry&VM_INDEXED_CROP_F3);
+            const uint8_t display=cropInput?in.display&3:in.display;
+            if(indexedVideo.configured&&display<4&&(!cropInput||!(in.display&12))){
+                const uint8_t mode=display==0?indexedVideo.preferred:display;
+                if(indexedVideo.capabilities&(1u<<mode)){
+                    if(indexedVideo.geometry&VM_INDEXED_CROP_F3)indexedVideo.camera.input(mode,cropInput?in.display>>4:0,micros());
+                    indexedVideo.requested=mode;
+                }
                 if(in.protocol==0x83){in.protocol=0x81;in.display=1;module->input(&in);}
             }
         }else module->input(&in);

@@ -15,6 +15,8 @@ struct LiveFrame {
     uint32_t mask;
     uint8_t mode;
     uint8_t background;
+    uint8_t overlays; // Uses existing struct padding; second plane is sprites.
+    uint8_t multicolor; // Crop F3; fills the last padding byte, no size growth.
 };
 struct IndexedSource {
     const uint8_t *pixels,*palette;
@@ -22,10 +24,13 @@ struct IndexedSource {
     uint16_t geometry=0; // bit 0: centered native height; bit 1: 2x pixel width
     uint8_t (*read_pixel)(void *,uint16_t,uint16_t)=nullptr;
     void *context=nullptr;
+    uint16_t crop_x=0,crop_y=0;
+    uint16_t background_index=256; // Internal crop hint; 256 keeps legacy choice.
 };
 class LiveConverter {
     uint8_t map_[256];
     uint32_t distance_[16][16];
+    void overlay(const IndexedSource &s,LiveFrame &out,bool nativeWidth) const;
     static const uint8_t *palette();
     struct Pair {uint8_t a,b;};
     static Pair pair(const uint8_t *hist) {
@@ -37,6 +42,27 @@ class LiveConverter {
     }
     uint32_t error(const uint8_t *hist,Pair p) const {
         uint32_t e=0;for(unsigned i=0;i<16;i++)e+=hist[i]*(distance_[i][p.a]<distance_[i][p.b]?distance_[i][p.a]:distance_[i][p.b]);return e;
+    }
+    // F5 only: consider the color suffering the greatest weighted loss.
+    // Test just its two substitutions, never an exhaustive palette search.
+    // Exact regions return immediately; ties preserve the legacy bit encoding.
+    Pair detailPair(const uint8_t *hist,Pair best,unsigned samples) const {
+        if(hist[best.a]+(best.a==best.b?0:hist[best.b])==samples)return best;
+        const Pair original=best;uint32_t lowest=0,worst=0;uint8_t detail=best.b;
+        for(uint8_t c=0;c<16;c++)if(hist[c]){
+            const auto a=distance_[c][best.a],b=distance_[c][best.b];
+            const auto loss=hist[c]*(a<b?a:b);lowest+=loss;
+            if(loss>worst){worst=loss;detail=c;}
+        }
+        if(!worst)return best;
+        uint32_t keepA=0,keepB=0;
+        for(uint8_t c=0;c<16;c++)if(hist[c]){
+            const auto a=distance_[c][original.a],b=distance_[c][original.b],d=distance_[c][detail];
+            keepA+=hist[c]*(a<d?a:d);keepB+=hist[c]*(b<d?b:d);
+        }
+        if(keepA<lowest){best={original.a,detail};lowest=keepA;}
+        if(keepB<lowest)best={detail,original.b};
+        return best;
     }
     void encode(const uint8_t *pixels,uint8_t first,uint8_t end,Pair p,uint8_t *out) const {
         for(unsigned y=first;y<end;y++){out[y]=0;for(unsigned x=0;x<8;x++)

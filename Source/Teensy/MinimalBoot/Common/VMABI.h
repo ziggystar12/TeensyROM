@@ -57,6 +57,16 @@ enum : uint16_t { VM_INDEXED_FOREGROUND=8, VM_INDEXED_SOURCE_BACKGROUND=16,
 // video_configure; older hosts reject this bit and callers may retry without
 // it. Other modes and existing producers retain adaptive conversion.
 enum : uint16_t { VM_INDEXED_STABLE_RASTER=64 };
+// Negotiated F5 profile for clients with hires sprite-plane support. Older
+// hosts reject these bits; producers retry their legacy setup without them.
+// SPRITE_TAGS uses bit 6 of a <=64-color index as an actor-priority hint.
+// The hint never changes the composited source color, including F1/F7.
+enum : uint16_t { VM_INDEXED_SPRITE_F5=128, VM_INDEXED_SPRITE_TAGS=256 };
+// Negotiated F3 profile: native 160x200 crop rendered as ordinary multicolor.
+// A matching client enables WASD only after receiving crop resume flag 8.
+// Combined input 83h then carries W/S/A/D in display bits 4/5/6/7; bits 0..1
+// retain the selector and bits 2..3 stay zero. Guest button bits are unchanged.
+enum : uint16_t { VM_INDEXED_CROP_F3=512 };
 // Opt-in indexed service: packed RGB palette and row-major 8-bit indices.
 // Modes 0 Color, 1 Auto-8, 2 Enhanced-25, 3 Sharp; capability bit = 1<<mode.
 // Configuration lends an aligned, lifetime-long RAM1 workspace to firmware.
