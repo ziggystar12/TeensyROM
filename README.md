@@ -4,6 +4,11 @@
 
 ## MHS Power Engine integration (review branch)
 
+**Current MPE VMs require TeensyROM+ PCB v0.4 and its full bus-mastering DMA.
+Original TeensyROM PCB v0.2/v0.3 does not support this VM implementation.**
+The stock interface is retained on TR+; regular TR comparison builds have VM
+support disabled and are ordinary-firmware regression checks only.
+
 [MHS Power Engine (MPE)](https://github.com/ziggystar12/MHS-Teensy-Rom-Power-Engine)
 is the system and **MPE Cartridge VM format created by MHS for TeensyROM+**.
 It lets downloadable VM engines execute directly on the cartridge's Teensy ARM

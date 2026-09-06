@@ -12,10 +12,18 @@ Machine-readable measurements and DoomVM file hashes are in
 
 ## Builds
 
-Unmodified upstream TR+ and the stock TR configuration compiled with Arduino
-CLI 1.4.1, core 1.61.0, GCC 11.3.1, 600 MHz build setting / upstream's 816 MHz
-runtime clock. The MPE candidate compiled with the same dependencies and stock
-C64 assets. No hardware was flashed.
+Three configurations compiled with Arduino CLI 1.4.1, core 1.61.0, GCC 11.3.1,
+600 MHz build setting / upstream's 816 MHz runtime clock:
+
+| Build | Hardware | MPE VM support |
+| --- | --- | --- |
+| `stock-plus` baseline | TR+ PCB v0.4 | Disabled; ordinary firmware comparison. |
+| `stock` baseline | Original TR PCB v0.2/v0.3 | Disabled; ordinary firmware regression check only. |
+| `mpe` candidate | TR+ PCB v0.4 | Enabled; requires full bus-mastering DMA. |
+
+**The successful original-TR build does not establish VM compatibility. Current
+MPE VMs, including DoomVM, require TR+.** All builds retain stock C64 assets.
+No hardware was flashed.
 
 Candidate: `TeensyROM+_0.8.0.4_MPE-review1_full.hex`
 

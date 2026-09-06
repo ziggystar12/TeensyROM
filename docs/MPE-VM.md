@@ -5,6 +5,14 @@ keeps Travis's C64 menu, settings, bundled applications and ordinary cartridge
 configuration, and adds the generic MHS Power Engine module loader. No Custom
 GUI or emulator engine is compiled into this firmware.
 
+**TR+ hardware is required for the current MPE VM implementation, including
+DoomVM. It is not just a performance upgrade.** The host uses TR+'s full
+bus-mastering DMA to write display data directly into C64 memory. Original TR
+PCB v0.2/v0.3 can pause the CPU through `/DMA` but lacks the bus-control hardware
+used by these transfers. There is no supported original-TR VM mode or non-DMA
+display fallback in this release. Retaining Travis's original interface means
+using that interface on TR+ hardware.
+
 MHS created the MHS Power Engine system and MPE Cartridge VM format for the
 TeensyROM+ cartridge. Its host, module loader, shared services and C64 transport
 let downloadable VM engines execute directly on the Teensy's ARM processor,
@@ -72,6 +80,10 @@ The output is named `TeensyROM+_0.8.0.4_MPE-review1_full.hex` for this upstream
 revision. The visible stock firmware version remains unchanged; identify this
 review build by its filename and SHA-256. The original stock build script is
 unchanged. For comparison builds with the isolated builder:
+
+Both comparison modes below disable MPE. `stock-plus` builds ordinary TR+
+firmware; `stock` builds ordinary original-TR firmware. A passing `stock` build
+checks preservation of the original firmware, not VM support on original TR.
 
 ```powershell
 .\mpe\Build.ps1 -Mode stock-plus -Output C:\MPE-stock-plus
