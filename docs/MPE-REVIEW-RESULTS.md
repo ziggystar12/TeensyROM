@@ -6,6 +6,7 @@ host source, build tools and tests; no VM engines or game media are included.
 
 Upstream base: `442aaaa266f3306ba30dd925235939ee3878db77`.
 Imported host base: `1dde1563ba2cea31761d04300b6d962ae2ec5ca2`.
+Compiled firmware source: `0bbd9a0be3ebb953922b04895133280d4268265a`.
 Machine-readable measurements and DoomVM file hashes are in
 [evidence.json](../mpe/review/evidence.json).
 
@@ -78,7 +79,7 @@ must not be counted as free memory.
 ## Physical review still required
 
 Test cold/warm boot into the unchanged stock interface; enter DoomVM; exercise
-gameplay, graphics, input, sound and saves; reset/menu-button back to the stock
+E1M1 gameplay, graphics, input and sound; reset/menu-button back to the stock
 menu with autolaunch enabled. Cover PAL/NTSC, missing SD, corrupt packages and
 reset during launch. Test firmware installation, subsequent update and return
 to stock firmware with settings retained.
@@ -92,5 +93,7 @@ physical acceptance of this new stock-interface candidate.
 
 The DoomVM download home is
 [MHS-Teensy-Rom-Power-Engine](https://github.com/ziggystar12/MHS-Teensy-Rom-Power-Engine).
-It was private and being prepared when this review was assembled. Publication
-and the final DoomVM package selection are separate from this integration branch.
+The repository became public during preparation. Its complete `vms/DOOMVM.zip`
+was downloaded and its manifest, engine and C64 client hashes match the tested
+files recorded in `evidence.json`. The current Doom release supports E1M1;
+saving and later levels are not supported. Other VMs remain withheld.

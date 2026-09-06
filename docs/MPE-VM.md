@@ -14,16 +14,17 @@ firmware additions.
 
 The public home for DoomVM and the shared platform is
 [MHS-Teensy-Rom-Power-Engine](https://github.com/ziggystar12/MHS-Teensy-Rom-Power-Engine).
-That repository is being prepared; this review does not claim its download is
-already public. Use its DoomVM installation instructions once publication is
-complete. The separate [Custom GUI firmware](https://github.com/ziggystar12/Teensy-Rom-Custom-GUI)
+The complete [DoomVM download](https://github.com/ziggystar12/MHS-Teensy-Rom-Power-Engine/raw/refs/heads/main/vms/DOOMVM.zip)
+is public. Its manifest, module and client match the files verified for this
+candidate. The separate [Custom GUI firmware](https://github.com/ziggystar12/Teensy-Rom-Custom-GUI)
 supports the same VM contract for users who prefer that interface.
 
 Install this candidate's full HEX through the existing TeensyROM updater for
 PCB v0.4, then place DoomVM's launcher and `VMS/DOOMVM/` directory on SD. Select
 `DOOMVM.crt` through Travis's normal browser. The package supplies its own C64
-client, engine and presentation; follow its instructions for game data. A
-registered `.gbd` file on SD can also launch the installed DoomVM directly.
+client, engine and presentation; follow its instructions for game data. The
+current Doom release supports E1M1; saving and later levels are not supported.
+A registered `.gbd` file on SD can also launch the installed DoomVM directly.
 Reset/menu-button exit returns to Travis's interface and skips autolaunch once.
 
 The firmware requires no PSRAM for VM execution. VM launches use SD; USB,
@@ -34,7 +35,8 @@ package's C64 client and shared host transport.
 
 ## Build on Windows
 
-Prerequisites: Node.js, Arduino CLI, Teensy core **1.61.0**, the libraries in
+Prerequisites: a Git checkout, Node.js, Arduino CLI, Teensy core **1.61.0**, and
+the libraries in
 [upstream BuildInfo](../Source/BuildInfo.md), including CRC32 2.0.0. The code was
 built with Arduino CLI 1.4.1 / GCC 11.3.1. Keep core 1.61.0 as upstream currently
 recommends. No C64 assembly build is necessary; upstream's checked-in menu,
@@ -145,8 +147,8 @@ adds their compatibility checks. Passing those checks is not release approval.
 No other VM downloads or payloads are part of this review.
 
 The verification report explicitly distinguishes host/image checks from physical
-hardware acceptance. Before merge/release, test Doom gameplay, PAL/NTSC transport,
-input, sound, saves, reset/menu return, missing SD and interrupted launch recovery,
+hardware acceptance. Before merge/release, test Doom E1M1 gameplay, PAL/NTSC transport,
+input, sound, reset/menu return, missing SD and interrupted launch recovery,
 normal/large CRTs including active bank swapping, stock networking/USB/MIDI,
 REU/freezer/KERNAL functionality, settings retention and the firmware updater.
 Compare with the unmodified build on the same hardware. See the accompanying
