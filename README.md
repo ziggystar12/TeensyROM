@@ -92,6 +92,7 @@ Compatible with C64 and C128 machines/variants, NTSC and PAL supported.
   * **SW Release notes/development**
     * **[Firmware Release history](bin/TeensyROM/FW_Release_History.md)**
     * **[Software Build Instructions](Source/BuildInfo.md)**
+    * [Optional MHS Power Engine VM build (maintainer review)](docs/MPE-VM.md) — stock interface with separately downloaded DoomVM.
   * **Hardware & PCB Related**
     * **[3D printed case files/document](3D_Print_Case/3D-Printed-Case-ReadMe.md)**
     * **[RTC Battery Addition for v0.2/0.3 PCBs](docs/RTC_Battery_Addition.md)**
