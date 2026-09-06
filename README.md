@@ -2,6 +2,24 @@
 
 ***Connect your Commodore to the 21st century***
 
+## MHS Power Engine integration (review branch)
+
+[MHS Power Engine (MPE)](https://github.com/ziggystar12/MHS-Teensy-Rom-Power-Engine)
+is the system and **MPE Cartridge VM format created by MHS for TeensyROM+**.
+It lets downloadable VM engines execute directly on the cartridge's Teensy ARM
+processor, with the C64 handling display, SID sound and user input. MHS developed
+the shared host, loader, services and C64 transport that make this possible.
+
+This optional firmware integration adds MPE support to Travis's existing
+interface. It uses the same VM format as the MHS Custom GUI firmware and retains
+the stock menu and ordinary cartridge configuration. **DoomVM is the only VM
+selected for public shipment; other VMs are withheld pending testing.**
+
+This branch is a maintainer review candidate with successful builds and host
+checks; physical hardware acceptance remains pending. See the
+[MPE build and integration guide](docs/MPE-VM.md). TeensyROM hardware and original
+firmware remain the work of Travis Smith / Sensorium Embedded.
+
 **Features include:**
 * **ROM emulator**: The perfect way to play CRT files, such as the highly recommended [OneLoad64](https://www.youtube.com/watch?v=lz0CJbkplj0) collection.
 * **Instant loader**: [Immediately load/run](docs/General_Usage.md) program (PRG) files

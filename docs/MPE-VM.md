@@ -5,6 +5,14 @@ keeps Travis's C64 menu, settings, bundled applications and ordinary cartridge
 configuration, and adds the generic MHS Power Engine module loader. No Custom
 GUI or emulator engine is compiled into this firmware.
 
+MHS created the MHS Power Engine system and MPE Cartridge VM format for the
+TeensyROM+ cartridge. Its host, module loader, shared services and C64 transport
+let downloadable VM engines execute directly on the Teensy's ARM processor,
+with display, SID sound and input handled by the C64. This integration brings
+that MHS platform to Travis's original interface. Travis Smith / Sensorium
+Embedded retains credit for TeensyROM hardware and the original firmware;
+individual VM engines retain their authors' credits and licences.
+
 **DoomVM is the only VM selected for public shipment.** Other VMs remain under
 development and are withheld pending testing. The host remains generic so
 future compatible modules can use the same platform without engine-specific
