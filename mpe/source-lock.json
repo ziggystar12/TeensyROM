@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/ziggystar12/Teensy-Rom-Custom-GUI",
-  "revision": "bf1e7e714e881a70f0006cef7764678e4d0fc0c4",
+  "revision": "59b86dff016ded4cdab27e5da5a989a4cb2eddca",
   "files": [
     {
       "path": "Source/Teensy/MinimalBoot/Common/VMABI.h",
@@ -28,7 +28,7 @@
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMIndexedVideo.h",
-      "sha256": "f156c18caa40cd5ba3773823736ad69186fee8cad33ca3016e860a67fed4aca5"
+      "sha256": "b06719471808cc50cab5172bbc49bda687130cb1ed4653cb2a8cb10cc3e26a3d"
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMPacketReplay.h",
@@ -263,6 +263,10 @@
     {
       "path": "Source/Teensy/tests/recovery-flash-source.test.js",
       "sha256": "db7fb0529f59fe996a7ee59f8d864482861e0ecf9aebd0aabca08153e94e91a8"
+    },
+    {
+      "path": "vm/tests/indexed_timing_test.cpp",
+      "sha256": "b25f9f9b8e3f6b2058e27e023af33bd6b0ff73f68ebe90b6e318535673da9209"
     }
   ],
   "adaptations": [
@@ -272,7 +276,7 @@
     },
     {
       "path": "vm/abi/README.md",
-      "reason": "Document the upstream integration and Doom-only public shipment policy; ABI code remains shared."
+      "reason": "Document the upstream integration and separate VM downloads; ABI code remains shared."
     },
     {
       "path": "mpe/host/Min_TeensyROM.h",

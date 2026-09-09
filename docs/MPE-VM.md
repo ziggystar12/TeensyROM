@@ -40,6 +40,8 @@ validation.
   Other negotiated modes, including F7 Sharp, retain their existing conversion.
 - Full-width 320x200 NUFLIX double buffering, dirty updates and bounded PAL/NTSC
   transfer grants. SID packets can be serviced while a picture uploads.
+- NUFLIX-capable clients can also use ordinary F1/F3/F7 with their existing
+  timing handshake. Invalid timing values still fail before DMA.
 - Immutable source pixels, palettes, raster contexts and dirty maps may reside
   in the lower 416 KiB RAM2 arena. Configuration and video workspace stay in RAM1.
 - ABI-2 module loading, files, input, sound, packet replay and opt-in auxiliary
@@ -95,7 +97,7 @@ VM modules load into RAM, not firmware flash.
 
 The branch includes upstream `dc1174c` and retains Travis's FLASHMEM and
 root-file hot-key launch fixes. Shared host source is imported from committed
-MPE revision `bf1e7e714e881a70f0006cef7764678e4d0fc0c4`; the complete imported
+MPE revision `59b86dff016ded4cdab27e5da5a989a4cb2eddca`; the complete imported
 files are present here. [source-lock.json](../mpe/source-lock.json) records the
 source pin and the small dedicated-boot adaptations. See the
 [ABI guide](../vm/abi/README.md) and [component notices](MPE-FIRMWARE-NOTICES.md).

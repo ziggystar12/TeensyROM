@@ -48,7 +48,7 @@ native('mpe_video_crop_test');native('mpe_video_detail_test');native('mpe_video_
 native('full_video_converter_test');native('full_video_kernel_test',[output]);
 if(process.platform==='win32'){
   native('indexed_host_test');native('center_video_test',[output]);native('full_video_host_test',[output]);
-  native('indexed_ram2_source_test');native('color_f1_host_test');
+  native('indexed_ram2_source_test');native('indexed_timing_test');native('color_f1_host_test');
   generateNativeData(path.join(root,'experiments/dosvm-nuflix/upstream-pinned'),output);
   generateDoubleData(output);
   const frames=[0,1,2].map(phase=>{

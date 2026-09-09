@@ -1,10 +1,10 @@
 {
   "upstreamBase": "dc1174ce8475153160e0b0da4ff65525a7dd4e5a",
-  "sharedHostRevision": "bf1e7e714e881a70f0006cef7764678e4d0fc0c4",
+  "sharedHostRevision": "59b86dff016ded4cdab27e5da5a989a4cb2eddca",
   "artifact": {
     "path": "mpe/review/TeensyROM+_0.8.0.5_MPE-1.2.6_full.hex",
     "bytes": 7051912,
-    "sha256": "ef970a3d8af1a85439adc6c8103733b6ce8911da0c29a2fdade5d0bbf593b1ed"
+    "sha256": "321155d52ec077c3c7469b60961019ec30227f56b682de626fad0e2912adb7a5"
   },
   "toolchain": {
     "arduinoCli": "1.4.1",
@@ -96,7 +96,7 @@
     },
     {
       "name": "vm",
-      "sha256": "e1b8b0a12f37aad50b6d47fb9a620af6551539aa49943772c4d1ff21226ddd3e"
+      "sha256": "f5c5357f21a813e9f2a1c9ea569ecb4f6e9512e4d645ea7f6e7d1bce0ef2ffdd"
     }
   ],
   "comparisonBuilds": [
@@ -134,7 +134,7 @@
     }
   ],
   "verification": {
-    "firmwareSha256": "ef970a3d8af1a85439adc6c8103733b6ce8911da0c29a2fdade5d0bbf593b1ed",
+    "firmwareSha256": "321155d52ec077c3c7469b60961019ec30227f56b682de626fad0e2912adb7a5",
     "passed": true,
     "unchangedUpstreamFiles": 219,
     "packageHashes": [
@@ -160,7 +160,7 @@
   "tests": [
     {
       "path": "mpe/tools/verify.mjs",
-      "sha256": "2eba7eceb6432fa031471a6c5b9bd0b230119d48242def6d4ed21346aff886b4"
+      "sha256": "4f4b37152ecbcfcec8d95346a206a3d07af06136aeb106ff5667b2fd712ff596"
     },
     {
       "path": "mpe/tests/startup.test.mjs",
@@ -179,7 +179,7 @@
       "sha256": "10a762df6a986cea4d18fccb32768b855c7fcbac4e9d621d47083ba1fba9d744"
     }
   ],
-  "testLogSha256": "d92c9057ab261ad80bde6da7f626c66afd7413e963b5056607b748c547e0eee6",
+  "testLogSha256": "2b4d4fd767b73969407e42c7586f9ec7fcc409e90267bbb76bb2bb28a5ab20b6",
   "sourceInputs": [
     {
       "path": "experiments/dosvm-nuflix/double-buffer.mjs",
@@ -939,7 +939,7 @@
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMIndexedVideo.h",
-      "sha256": "f156c18caa40cd5ba3773823736ad69186fee8cad33ca3016e860a67fed4aca5"
+      "sha256": "b06719471808cc50cab5172bbc49bda687130cb1ed4653cb2a8cb10cc3e26a3d"
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMPacketReplay.h",

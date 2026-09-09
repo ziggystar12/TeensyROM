@@ -8,6 +8,8 @@ The branch includes TeensyROM 0.8.0.5 with the latest upstream changes,
 MHS F1 colour fitting, NUFLIX double buffering and SID servicing during
 uploads. Startup and button handling match upstream exactly. The two-button
 firmware-recovery option is gone; normal SD/USB firmware updating remains.
+NUFLIX-capable clients can switch to F1/F3/F7 without restarting; timing tests
+cover all 256 possible handshake values and reject unsupported ones before DMA.
 
 ## Checks
 
