@@ -1,10 +1,10 @@
 {
   "repository": "https://github.com/ziggystar12/Teensy-Rom-Custom-GUI",
-  "revision": "9585d08136935877aed84255129ae0bccb9c56ff",
+  "revision": "bf1e7e714e881a70f0006cef7764678e4d0fc0c4",
   "files": [
     {
       "path": "Source/Teensy/MinimalBoot/Common/VMABI.h",
-      "sha256": "e545080222893a60f5cf04c277bc75b4f4164c61d4291845e690c52e442a6704"
+      "sha256": "edd3469275632154bd1b0cddb837d0e409282c894cde319b07f0a640401c91ed"
     },
     {
       "path": "Source/Teensy/MinimalBoot/Common/VMRegistry.h",
@@ -28,7 +28,7 @@
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMIndexedVideo.h",
-      "sha256": "9f43579e71d2ee7731d6c1fa24d0c1f69e93ee1787b6e75e39723f7be084cd90"
+      "sha256": "f156c18caa40cd5ba3773823736ad69186fee8cad33ca3016e860a67fed4aca5"
     },
     {
       "path": "Source/Teensy/MinimalBoot/VMPacketReplay.h",
@@ -64,11 +64,11 @@
     },
     {
       "path": "vm/video/mpe_video_live.cpp",
-      "sha256": "78042dabc5bde035932fc1cdba90c9dca91eeadb3b0932e92f29c64e50816744"
+      "sha256": "f86bbc87a2ccbe77f9cd5a90d5c953171fe94c3bac2ea7e9fa7a31ee4ffa928f"
     },
     {
       "path": "vm/video/mpe_video_live.h",
-      "sha256": "b3e6e51965113bacb64f05a0ffc1a68a5ce8d4d4af69c189b71f0ccd36f0f311"
+      "sha256": "0a1af43b34dd951af16f635b4ab4f90c096d63e8cc21a466064ab6966cc1a90d"
     },
     {
       "path": "vm/video/mpe_video_policy.h",
@@ -161,28 +161,8 @@
       "sha256": "fb0f602b0ca713f1817fd33f14afc0db1ee495c53d803e5e8a9668057311428a"
     },
     {
-      "path": "vm/video/mpe_video_rad_f1.h",
-      "sha256": "6b5c1b060e6e77e4384e97a1535d8d799d5aa09a4d8ef91adfd2a29f23df49c8"
-    },
-    {
-      "path": "vm/video/rad_f1_lut.h",
-      "sha256": "bcda5be0f5d20a631f1c7f0f5988dff9c3faf1c8ddc6688920a92ee1493f23af"
-    },
-    {
-      "path": "vm/video/rad_f1_tables.h",
-      "sha256": "406e6b7a84129b9f661cb67eb319b5f00c752ecb210a9a631e6c1be4dcff714b"
-    },
-    {
       "path": "vm/tests/indexed_ram2_source_test.cpp",
       "sha256": "16659288154b00cd1703ead3227c99665105857fbd857d95d0fd6ddfec51c95c"
-    },
-    {
-      "path": "vm/tests/rad_f1_host_test.cpp",
-      "sha256": "dc3b647c6c5180ba4cbf0508972566a03612dfd873466a8f76841586e7e8fb8c"
-    },
-    {
-      "path": "vm/tests/rad_f1_test.cpp",
-      "sha256": "39541ba564f9a686e69df5a5b3b7fea8f6684fa59e54a6368d0bb352e264ad12"
     },
     {
       "path": "Source/Teensy/Flash/FXUtil.cpp",
@@ -265,20 +245,24 @@
       "sha256": "09b932ce3c4652e0a1cbf0311e20e76561491d6132eb83766ba06063161edd1b"
     },
     {
-      "path": "third_party/RAD-Doom/README.md",
-      "sha256": "d7d12b5862b634e0017d6cf0240b45120487e062c93427557936aca694913f39"
+      "path": "vm/video/mpe_video_color_f1.h",
+      "sha256": "d55c4138c02647ec3609cbbaa4c5f76d2423f613f860a84f167539030d3dcdfa"
     },
     {
-      "path": "third_party/RAD-Doom/COPYING",
-      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      "path": "vm/video/mpe_video_color_f1.cpp",
+      "sha256": "256c98c68a8275e9396bde288efdc335066a3f2acec4eed6afd31735fadcc417"
     },
     {
-      "path": "scripts/generate-rad-f1-lut.mjs",
-      "sha256": "d217476f0c8b67b0e3a437cb0b5dc1f3e53b66f5339a2f69ee9315e7d13063f9"
+      "path": "vm/tests/color_f1_host_test.cpp",
+      "sha256": "c277f0426c5fa948b791b263ecdb6dfbda021e0491f3f2cac1b71a0a0be31825"
     },
     {
-      "path": "scripts/test-rad-f1.mjs",
-      "sha256": "2dfc97237c2af5bde55b40f4a679ca0e120c342c03aaa8487029cfb785934f4a"
+      "path": "vm/tests/color_f1_test.cpp",
+      "sha256": "9b7340899efb44c050329fa648cb55109e5542916becb987f07585c46dd69ee6"
+    },
+    {
+      "path": "Source/Teensy/tests/recovery-flash-source.test.js",
+      "sha256": "db7fb0529f59fe996a7ee59f8d864482861e0ecf9aebd0aabca08153e94e91a8"
     }
   ],
   "adaptations": [

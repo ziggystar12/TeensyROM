@@ -37,18 +37,18 @@ assert.equal(sha(build.artifact),build.sha256);
 assert.ok(build.inputs?.length,'Build is missing its source input manifest');
 for(const input of build.inputs)assert.equal(sha(path.join(root,input.path)),input.sha256,'Built source drift: '+input.path);
 logs.push(run(process.execPath,['--test','mpe/tools/hex.test.mjs']));
-sourceTest('recovery','mpe/tests/recovery.cpp');
+logs.push(run(process.execPath,['--test','Source/Teensy/tests/recovery-flash-source.test.js','mpe/tests/startup.test.mjs']));
 sourceTest('flash-parser','Source/Teensy/tests/flash-update-parser.cpp');
 fs.writeFileSync(path.join(output,'audio-host-poll.h'),audioHost(fs.readFileSync(path.join(root,'Source/Teensy/MinimalBoot/VMHostPoll.h'),'utf8')));
 assert.equal(sha(path.join(output,'audio-host-poll.h')),sha(path.join(build.runRoot,'source/Source/Teensy/MPEBoot/VMHostPoll.h')),'Tested scheduler differs from firmware');
 sourceTest('nuflix-poll','mpe/tests/nuflix-poll.cpp');
 native('files_test',[fs.mkdtempSync(path.join(output,'files-sandbox-'))]);
-native('packet_replay_test');native('mpe_video_live_test',[path.join(output,'kernel')]);
+native('packet_replay_test');native('color_f1_test');native('mpe_video_live_test',[path.join(output,'kernel')]);
 native('mpe_video_crop_test');native('mpe_video_detail_test');native('mpe_video_sprite_test');
 native('full_video_converter_test');native('full_video_kernel_test',[output]);
 if(process.platform==='win32'){
   native('indexed_host_test');native('center_video_test',[output]);native('full_video_host_test',[output]);
-  native('indexed_ram2_source_test');native('rad_f1_host_test');
+  native('indexed_ram2_source_test');native('color_f1_host_test');
   generateNativeData(path.join(root,'experiments/dosvm-nuflix/upstream-pinned'),output);
   generateDoubleData(output);
   const frames=[0,1,2].map(phase=>{
@@ -101,7 +101,7 @@ assert.equal(word(VM_BASE),0x42464346);assert.equal(word(VM_BASE+0x1000),0x43200
 const entry=word(VM_BASE+0x1004);assert.equal(entry&1,1);assert.ok(entry>=VM_BASE+0x1000&&entry<=VM_BASE+0x3001);
 assert.equal(word(VM_BASE+0x1020),VM_BASE);assert.ok(word(VM_BASE+0x1024)<=VM_LIMIT-VM_BASE);
 assert.ok(build.layout.stagingBytes>=build.layout.imageSpan);
-const upstream='0997c5a066f87f8f6528ed3887684a80c5af17a9';
+const upstream='dc1174ce8475153160e0b0da4ff65525a7dd4e5a';
 const unchanged=run('git',['ls-tree','-r',upstream,'Source/C64','Source/Teensy/TRMenuFiles','Source/Teensy/MinimalBoot/Min_TeensyROM.h','Source/Teensy/MinimalBoot/Min_DriveDirLoad.ino','Source/Teensy/MinimalBoot/Common/IO_Handlers/IOH_MagicDesk2.c']).trim().split('\n');
 for(const row of unchanged){const [metadata,file]=row.split('\t');const expected=metadata.split(' ')[2];assert.equal(run('git',['hash-object','--path='+file,file]).trim(),expected,file+' changed');}
 const packageHashes=[];

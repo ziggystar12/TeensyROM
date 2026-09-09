@@ -34,10 +34,10 @@ const artifact=path.join(review,filename);
 assert.ok(!fs.existsSync(artifact),'Do not overwrite an earlier review artifact');
 fs.copyFileSync(build.artifact,artifact);assert.equal(sha(artifact),build.sha256);
 const testLog=path.join(build.runRoot,'verification/tests.log');
-fs.copyFileSync(testLog,path.join(review,'host-1.2.2-tests.log'));
+fs.copyFileSync(testLog,path.join(review,'host-1.2.6-tests.log'));
 const lock=read(path.join(root,'mpe/source-lock.json'));
-const tests=['mpe/tools/verify.mjs','mpe/tests/recovery.cpp','mpe/tests/nuflix-poll.cpp','Source/Teensy/tests/flash-update-parser.cpp'];
-const record={upstreamBase:'0997c5a066f87f8f6528ed3887684a80c5af17a9',sharedHostRevision:lock.revision,
+const tests=['mpe/tools/verify.mjs','mpe/tests/startup.test.mjs','Source/Teensy/tests/recovery-flash-source.test.js','mpe/tests/nuflix-poll.cpp','Source/Teensy/tests/flash-update-parser.cpp'];
+const record={upstreamBase:'dc1174ce8475153160e0b0da4ff65525a7dd4e5a',sharedHostRevision:lock.revision,
   artifact:{path:'mpe/review/'+filename,bytes:fs.statSync(artifact).size,sha256:build.sha256},
   toolchain:{arduinoCli:'1.4.1',teensyCore:'1.61.0',gcc:'11.3.1',optimization:'o2std',board:'TeensyROM+ Fab0.4'},
   memory:memoryMap,vmReservations:{hostCode:98304,hostHeap:16384,moduleData:196608,executionStack:49152,
@@ -48,8 +48,8 @@ const record={upstreamBase:'0997c5a066f87f8f6528ed3887684a80c5af17a9',sharedHost
   testLogSha256:sha(testLog),sourceInputs:build.inputs,hardwareTested:false,
   notes:['The original text UI and 219 protected upstream files remain unchanged.',
     'Firmware contains the host, not DOS/SCI/SCUMM or other emulator engines or private games.',
-    'Recovery/parser tests stub flash operations; they do not program hardware.',
-    'PAL/NTSC double-buffer tests simulate DMA. Physical gameplay, audio and recovery remain pending.',
-    'Combined MPE firmware includes GPL-3.0-or-later RAD-Doom conversion; see docs/MPE-FIRMWARE-NOTICES.md.']};
-fs.writeFileSync(path.join(review,'host-1.2.2-verification.json'),JSON.stringify(record,null,2)+'\n');
+    'Startup checks exclude button-triggered flashing; parser tests stub flash operations.',
+    'PAL/NTSC double-buffer tests simulate DMA. Physical gameplay, audio and updater acceptance remain pending.',
+    'Component licenses are documented in docs/MPE-FIRMWARE-NOTICES.md.']};
+fs.writeFileSync(path.join(review,'host-1.2.6-verification.json'),JSON.stringify(record,null,2)+'\n');
 console.log(JSON.stringify({artifact:record.artifact,memory:record.memory,passed:true,hardwareTested:false},null,2));

@@ -62,9 +62,6 @@ void (*fSpecialBtnChange)(bool Up_nDn);    //Pointer to function called when Spe
 #include "MinimalBoot/Common/ISRs.c"
 extern "C" uint32_t set_arm_clock(uint32_t frequency);
 extern float tempmonGetTemp(void);
-void DoFlashUpdate(FS *sourceFS, const char *FilePathName);
-extern bool SendC64Msgs;
-#include "RecoveryFlash.h"
 
 void setup() 
 {
@@ -156,9 +153,6 @@ void setup()
    IO1[rwRegTimezone]     = EEPROM.read(eepAdTimezone);  
    for (uint8_t reg=0; reg<NumColorRefs; reg++) IO1[rwRegColorRefStart+reg]=EEPROM.read(eepAdColorRefStart+reg); 
    //IO1[rwRegNextIOHndlr] = EEPROM.read(eepAdNextIOHndlr); //done each entry into menu
-#ifdef Fab04_SpecialButton
-   RecoveryFlashAtPowerOn();
-#endif
    SetUpMainMenuROM();
    MenuChange(); //set up drive path, menu source/size
 

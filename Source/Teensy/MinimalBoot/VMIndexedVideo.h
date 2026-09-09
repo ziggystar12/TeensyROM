@@ -26,6 +26,7 @@ struct IndexedVideoState {
     mpe_video::CropCamera camera;
     mpe_video::CenterFrame *center;
     mpe_video::FullFrame *full;
+    mpe_video::ColorF1Cache *colorCache;
     uint8_t firstRow,rowCount;
 #if defined(MPE_DOS_NUFLIX)
     void *nuflix;
@@ -58,6 +59,8 @@ static void indexedVideoAck(){
 static bool transferIndexedVideo();
 static_assert(sizeof(mpe_video::LiveFrame)+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity<=VM_INDEXED_VIDEO_WORKSPACE_BYTES,"Indexed workspace overflow");
 static_assert(sizeof(mpe_video::LiveFrame)*3+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity<=mpe_video::DeltaWorkspaceBytes,"Delta workspace overflow");
+static_assert(sizeof(mpe_video::LiveFrame)*3+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity+sizeof(mpe_video::ColorF1Cache)<=mpe_video::DeltaWorkspaceBytes,"Color F1 delta workspace overflow");
+static_assert(sizeof(mpe_video::LiveFrame)+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity+sizeof(mpe_video::ColorF1Cache)<=VM_INDEXED_VIDEO_WORKSPACE_BYTES,"Color F1 workspace overflow");
 static_assert(sizeof(mpe_video::CenterFrame)+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity<=VM_CENTER_VIDEO_WORKSPACE_BYTES,"Center workspace overflow");
 static_assert(sizeof(mpe_video::FullFrame)+sizeof(mpe_video::LiveConverter)+mpe_video::KernelCapacity<=VM_FULL_VIDEO_WORKSPACE_BYTES,"Full F5 workspace overflow");
 static bool videoRange(const void *p,uint32_t bytes){
@@ -104,7 +107,8 @@ static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
     }
     if(!setup||setup->bytes!=sizeof(*setup)||setup->workspace_bytes<VM_INDEXED_VIDEO_WORKSPACE_BYTES||
        ((uintptr_t)setup->workspace&3)||!videoRange(setup->workspace,VM_INDEXED_VIDEO_WORKSPACE_BYTES)||
-       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~(1023|VM_INDEXED_RAD_F1)))return false;
+       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~(1023|VM_INDEXED_COLOR_F1|VM_INDEXED_SOLID_STATUS))||
+       ((setup->reserved&VM_INDEXED_SOLID_STATUS)&&!(setup->reserved&VM_INDEXED_COLOR_F1)))return false;
     indexedVideo={};videoBorderWaiting=videoBorderGrant=false;auto p=(uint8_t *)setup->workspace;memset(p,0,VM_INDEXED_VIDEO_WORKSPACE_BYTES);
     indexedVideo.frame=(mpe_video::LiveFrame *)p;p+=sizeof(mpe_video::LiveFrame);
     indexedVideo.converter=(mpe_video::LiveConverter *)p;p+=sizeof(mpe_video::LiveConverter);
@@ -112,8 +116,9 @@ static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
     p+=mpe_video::KernelCapacity;
     if(setup->workspace_bytes>=mpe_video::DeltaWorkspaceBytes&&videoRange(setup->workspace,mpe_video::DeltaWorkspaceBytes)){
         indexedVideo.bank[0]=(mpe_video::LiveFrame *)p;p+=sizeof(mpe_video::LiveFrame);
-        indexedVideo.bank[1]=(mpe_video::LiveFrame *)p;
+        indexedVideo.bank[1]=(mpe_video::LiveFrame *)p;p+=sizeof(mpe_video::LiveFrame);
     }
+    if(setup->reserved&VM_INDEXED_COLOR_F1){indexedVideo.colorCache=(mpe_video::ColorF1Cache *)p;indexedVideo.colorCache->ready=false;}
     indexedVideo.geometry=setup->reserved;indexedVideo.capabilities=setup->capabilities;indexedVideo.configured=true;return true;
 }
 static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
@@ -158,11 +163,12 @@ static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
     mpe_video::IndexedSource s{source->pixels,source->palette,source->width,source->height,source->stride,source->colors,
         uint16_t((reader?reader->geometry:v.geometry&59)|(v.geometry&(VM_INDEXED_STABLE_RASTER|VM_INDEXED_SPRITE_F5|VM_INDEXED_SPRITE_TAGS|VM_INDEXED_CROP_F3))),reader?reader->read_pixel:nullptr,reader?reader->context:nullptr};
     if(crop){v.camera.position(source->width,source->height,micros());s.crop_x=v.camera.x;s.crop_y=v.camera.y;}
-    s.rad_f1=(v.geometry&VM_INDEXED_RAD_F1)!=0;
+    s.color_f1=(v.geometry&VM_INDEXED_COLOR_F1)!=0;
+    s.solid_from_y=(v.geometry&VM_INDEXED_SOLID_STATUS)?168:200;
     if(dirtyRaster)s.dirty_cells=reinterpret_cast<VmIndexedDirtyRasterFrame *>(source)->source_dirty;
     bool changed=true;
     const bool rendered=v.full?v.converter->renderFull(s,*v.full,&changed):
-        v.center?v.converter->renderCenter(s,*v.center,v.firstRow,v.rowCount):v.converter->render(s,v.requested,*v.frame,v.frame);
+        v.center?v.converter->renderCenter(s,*v.center,v.firstRow,v.rowCount):v.converter->render(s,v.requested,*v.frame,v.frame,v.colorCache);
     if(!rendered)return VmVideoResult::Failed;
     if(reader)reader->source_consumed=1;
     // No new picture means no flip or border handshake. The inactive bank may
