@@ -7,6 +7,9 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {decodeHex,VM_BASE,VM_LIMIT} from './hex.mjs';
 import {registryFixture} from './fixtures.mjs';
+import {generateNativeData} from '../../experiments/dosvm-nuflix/native-data.mjs';
+import {generateDoubleData} from '../../experiments/dosvm-nuflix/double-data.mjs';
+import {audioHost} from '../../experiments/dosvm-nuflix/live-audio.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const args=process.argv.slice(2),option=(name,fallback)=>{const i=args.indexOf(name);return i<0?fallback:args[i+1];};
 const reportPath=option('--build'),packages=option('--packages');
@@ -25,16 +28,36 @@ function native(name,argv=[],flags=[]){const exe=path.join(output,name+(process.
   run(compiler,['-std=c++17','-O2',...(process.platform==='win32'?['-static']:[]),...flags,'-I',root,'-I',output,path.join(root,'vm/tests',name+'.cpp'),'-o',exe]);
   const log=run(exe,argv);logs.push(log);console.log(log.trim());return exe;
 }
+function sourceTest(name,source,argv=[]){
+  const executable=path.join(output,name+(process.platform==='win32'?'.exe':''));
+  run(compiler,['-std=c++17','-O2',...(process.platform==='win32'?['-static']:[]),'-I',root,'-I',output,path.join(root,source),'-o',executable]);
+  const log=run(executable,argv);logs.push(log);console.log(log.trim());
+}
 assert.equal(sha(build.artifact),build.sha256);
 assert.ok(build.inputs?.length,'Build is missing its source input manifest');
 for(const input of build.inputs)assert.equal(sha(path.join(root,input.path)),input.sha256,'Built source drift: '+input.path);
 logs.push(run(process.execPath,['--test','mpe/tools/hex.test.mjs']));
+sourceTest('recovery','mpe/tests/recovery.cpp');
+sourceTest('flash-parser','Source/Teensy/tests/flash-update-parser.cpp');
+fs.writeFileSync(path.join(output,'audio-host-poll.h'),audioHost(fs.readFileSync(path.join(root,'Source/Teensy/MinimalBoot/VMHostPoll.h'),'utf8')));
+assert.equal(sha(path.join(output,'audio-host-poll.h')),sha(path.join(build.runRoot,'source/Source/Teensy/MPEBoot/VMHostPoll.h')),'Tested scheduler differs from firmware');
+sourceTest('nuflix-poll','mpe/tests/nuflix-poll.cpp');
 native('files_test',[fs.mkdtempSync(path.join(output,'files-sandbox-'))]);
 native('packet_replay_test');native('mpe_video_live_test',[path.join(output,'kernel')]);
 native('mpe_video_crop_test');native('mpe_video_detail_test');native('mpe_video_sprite_test');
 native('full_video_converter_test');native('full_video_kernel_test',[output]);
 if(process.platform==='win32'){
   native('indexed_host_test');native('center_video_test',[output]);native('full_video_host_test',[output]);
+  native('indexed_ram2_source_test');native('rad_f1_host_test');
+  generateNativeData(path.join(root,'experiments/dosvm-nuflix/upstream-pinned'),output);
+  generateDoubleData(output);
+  const frames=[0,1,2].map(phase=>{
+    const pixels=Buffer.alloc(64000);
+    for(let row=0;row<200;++row)for(let column=0;column<320;++column)
+      pixels[row*320+column]=((column>>3)^(row>>3)^(column<160?phase:0))&15;
+    const filename=path.join(output,'synthetic-nuflix-'+phase+'.idx');fs.writeFileSync(filename,pixels);return filename;
+  });
+  sourceTest('nuflix-double','experiments/dosvm-nuflix/double-host-test.cpp',[output,...frames]);
 }
 // Compile the actual stock-adapted swap functions; shims provide hardware IO.
 // Existing Teensy pointer casts require -fpermissive on a 64-bit native host.

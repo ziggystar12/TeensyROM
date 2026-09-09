@@ -4,6 +4,7 @@
 #ifndef MPE_VIDEO_CODE
 #define MPE_VIDEO_CODE
 #endif
+#include "mpe_video_rad_f1.h"
 namespace mpe_video {
 MPE_VIDEO_CODE const uint8_t *LiveConverter::palette(){
     static const uint8_t rgb[16][3]={{0,0,0},{255,255,255},{136,57,50},{103,182,189},{139,63,150},{85,160,73},{64,49,141},{191,206,114},
@@ -32,6 +33,7 @@ MPE_VIDEO_CODE void LiveConverter::prepare(const IndexedSource &s){
 MPE_VIDEO_CODE bool LiveConverter::render(const IndexedSource &s,uint8_t mode,LiveFrame &out,const LiveFrame *previous){
     if((!s.pixels&&!s.read_pixel)||!s.palette||!s.width||!s.height||s.width>1024||s.height>1024||(!s.read_pixel&&s.stride<s.width)||!s.colors||s.colors>256||mode>3)return false;
     if((s.geometry&~1019)||((s.geometry&256)&&s.colors>64))return false;
+    if(mode==0&&s.rad_f1&&s.width==320&&s.height==200){renderRadF1(s,out,previous);return true;}
     if(mode==1&&(s.geometry&512)){
         if(s.width<160||s.height<200||s.crop_x>s.width-160||s.crop_y>s.height-200)return false;
         auto crop=s;crop.width=160;crop.height=200;crop.geometry=s.geometry&~512;

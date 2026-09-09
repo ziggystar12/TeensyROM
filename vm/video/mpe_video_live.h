@@ -56,6 +56,8 @@ struct IndexedSource {
     // Null forces conversion of every cell; the producer owns invalidation
     // for changes inside a read_pixel context, including display-start changes.
     const uint8_t *dirty_cells=nullptr;
+    // Negotiated RAD-Doom preset 0. Only native 320x200 F1 uses this hint.
+    bool rad_f1=false;
 };
 class LiveConverter;
 constexpr unsigned FullPictureLeft=24,FullPictureWidth=320-FullPictureLeft;
@@ -81,11 +83,12 @@ struct FullFrame {
     void mark(unsigned cell){for(auto &bank:dirty)bank[cell/8]|=1u<<(cell&7);}
 };
 class LiveConverter {
-    uint8_t map_[256];
+    uint8_t map_[256]{};
     uint32_t distance_[16][16];
     void overlay(const IndexedSource &s,LiveFrame &out,bool nativeWidth) const;
     static const uint8_t *palette();
     void prepare(const IndexedSource &s);
+    void renderRadF1(const IndexedSource &s,LiveFrame &out,const LiveFrame *previous);
     bool renderQuad(const IndexedSource &s,LiveFrame &frame,uint8_t *extra0,uint8_t *extra1,
                     uint8_t *dirty,unsigned first,unsigned rows,const uint8_t *sourceDirty);
     struct Pair {uint8_t a,b;};

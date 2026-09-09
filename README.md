@@ -25,6 +25,13 @@ checks; physical hardware acceptance remains pending. See the
 [MPE build and integration guide](docs/MPE-VM.md). TeensyROM hardware and original
 firmware remain the work of Travis Smith / Sensorium Embedded.
 
+The current [MPE 1.2.2 review build](docs/MPE-RETEST-1.2.2.md) adds NUFLIX
+double-buffer transport, SID servicing during uploads and Menu + Alternate
+SD recovery, without replacing the text interface. See the
+[recovery procedure](docs/MPE-VM.md#two-button-sd-recovery-tr-fab04) and
+[component licenses](docs/MPE-FIRMWARE-NOTICES.md), including the GPLv3-or-later
+RAD-Doom converter in the combined MPE firmware.
+
 **Features include:**
 * **ROM emulator**: The perfect way to play CRT files, such as the highly recommended [OneLoad64](https://www.youtube.com/watch?v=lz0CJbkplj0) collection.
 * **Instant loader**: [Immediately load/run](docs/General_Usage.md) program (PRG) files

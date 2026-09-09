@@ -5,6 +5,10 @@
 #include "vm/video/mpe_video_kernel.h"
 #include "vm/video/mpe_video_camera.h"
 #undef MPE_VIDEO_CODE
+#if defined(MPE_DOS_NUFLIX)
+#include "experiments/dosvm-nuflix/native-display.cpp"
+#include "experiments/dosvm-nuflix/native-export.h"
+#endif
 
 namespace VmRuntime {
 struct IndexedVideoState {
@@ -23,6 +27,9 @@ struct IndexedVideoState {
     mpe_video::CenterFrame *center;
     mpe_video::FullFrame *full;
     uint8_t firstRow,rowCount;
+#if defined(MPE_DOS_NUFLIX)
+    void *nuflix;
+#endif
 };
 static IndexedVideoState indexedVideo{};
 static volatile bool videoBorderWaiting,videoBorderGrant;
@@ -56,10 +63,27 @@ static_assert(sizeof(mpe_video::FullFrame)+sizeof(mpe_video::LiveConverter)+mpe_
 static bool videoRange(const void *p,uint32_t bytes){
     auto address=(uintptr_t)p;return address>=VM_DATA_BASE&&address<=VM_DATA_LIMIT&&bytes<=VM_DATA_LIMIT-address;
 }
+// Indexed conversion consumes source pixels synchronously into its RAM1
+// receiver frame. A legacy module may therefore keep a large decoded image in
+// its RAM2 guest arena without lending RAM1 as a second full framebuffer.
+// Keep configuration/workspace validation RAM1-only; only read-only source
+// backing is permitted from the usable (non-RO-profile) RAM2 prefix.
+static bool videoSourceRange(const void *p,uint32_t bytes){
+    if(videoRange(p,bytes))return true;
+    const auto address=(uintptr_t)p;const auto limit=uintptr_t(VM_RAM_BASE)+VM_RAM2_GUEST_BYTES;
+    return address>=VM_RAM_BASE&&address<=limit&&bytes<=limit-address;
+}
+#if defined(MPE_DOS_NUFLIX)
+#include "experiments/dosvm-nuflix/native-host.h"
+#endif
 static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
     // Explicitly return a completed workspace loan before a native producer
     // reuses it. Never discard a pending transfer or its final resume ACK.
     if(!setup){if(indexedVideo.phase)return false;indexedVideo={};videoBorderWaiting=videoBorderGrant=false;return true;}
+#if defined(MPE_DOS_NUFLIX)
+    if(setup->reserved==(VM_INDEXED_NUFLIX_F5|VM_INDEXED_SEPARATE_SELECTORS))return configureNuflix(setup);
+    if(indexedVideo.nuflix&&indexedVideo.phase)return false;
+#endif
     if((indexedVideo.center||indexedVideo.full)&&indexedVideo.phase)return false;
     if(setup->bytes==sizeof(VmCenterVideoSetup)){
         const auto &c=*reinterpret_cast<const VmCenterVideoSetup *>(setup);
@@ -80,7 +104,7 @@ static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
     }
     if(!setup||setup->bytes!=sizeof(*setup)||setup->workspace_bytes<VM_INDEXED_VIDEO_WORKSPACE_BYTES||
        ((uintptr_t)setup->workspace&3)||!videoRange(setup->workspace,VM_INDEXED_VIDEO_WORKSPACE_BYTES)||
-       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~1023))return false;
+       setup->default_mode>3||(setup->capabilities&~15)||!(setup->capabilities&(1u<<setup->default_mode))||(setup->reserved&~(1023|VM_INDEXED_RAD_F1)))return false;
     indexedVideo={};videoBorderWaiting=videoBorderGrant=false;auto p=(uint8_t *)setup->workspace;memset(p,0,VM_INDEXED_VIDEO_WORKSPACE_BYTES);
     indexedVideo.frame=(mpe_video::LiveFrame *)p;p+=sizeof(mpe_video::LiveFrame);
     indexedVideo.converter=(mpe_video::LiveConverter *)p;p+=sizeof(mpe_video::LiveConverter);
@@ -94,6 +118,9 @@ static FLASHMEM bool configureIndexedVideo(const VmIndexedVideoSetup *setup){
 }
 static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
     auto &v=indexedVideo;
+#if defined(MPE_DOS_NUFLIX)
+    if(v.nuflix)return submitNuflix(source);
+#endif
     if(!v.configured||!source)return VmVideoResult::Unavailable;
     const bool dirtyRaster=source->bytes==sizeof(VmIndexedDirtyRasterFrame);
     const bool raster=dirtyRaster||source->bytes==sizeof(VmIndexedRasterFrame);
@@ -107,20 +134,20 @@ static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
     if(v.phase)return source->generation==v.generation?VmVideoResult::Busy:VmVideoResult::Failed;
     if(!source->width||!source->height||source->width>1024||source->height>1024||
        !source->colors||source->colors>256||source->palette_bytes<uint32_t(source->colors)*3||
-       !videoRange(source->palette,source->palette_bytes))return VmVideoResult::Failed;
+       !videoSourceRange(source->palette,source->palette_bytes))return VmVideoResult::Failed;
     if(reader){
         if(dirtyRaster){
             const auto dirty=reinterpret_cast<VmIndexedDirtyRasterFrame *>(source)->source_dirty;
-            if(!v.full||(dirty&&!videoRange(dirty,125)))return VmVideoResult::Failed;
+            if(!v.full||(dirty&&!videoSourceRange(dirty,125)))return VmVideoResult::Failed;
         }
         if(source->pixels||source->pixel_bytes||!reader->read_pixel||reader->reserved||(reader->geometry&~59)||
-           !videoRange(reader->context,1))return VmVideoResult::Failed;
+           !videoSourceRange(reader->context,1))return VmVideoResult::Failed;
 #if defined(__arm__)
         const uintptr_t callback=reinterpret_cast<uintptr_t>(reader->read_pixel);
         if(!(callback&1)||(callback&~uintptr_t(1))<VM_CODE_BASE||(callback&~uintptr_t(1))>=VM_CODE_LIMIT)return VmVideoResult::Failed;
 #endif
     }else if(source->stride<source->width||source->pixel_bytes<uint32_t(source->stride)*source->height||
-             !videoRange(source->pixels,source->pixel_bytes))return VmVideoResult::Failed;
+             !videoSourceRange(source->pixels,source->pixel_bytes))return VmVideoResult::Failed;
     if(DMA_State!=DMA_S_DisableReady)return VmVideoResult::Busy;
     const bool sprites=v.requested==2&&(v.geometry&VM_INDEXED_SPRITE_F5);
     const bool crop=v.requested==1&&(v.geometry&VM_INDEXED_CROP_F3);
@@ -131,6 +158,7 @@ static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
     mpe_video::IndexedSource s{source->pixels,source->palette,source->width,source->height,source->stride,source->colors,
         uint16_t((reader?reader->geometry:v.geometry&59)|(v.geometry&(VM_INDEXED_STABLE_RASTER|VM_INDEXED_SPRITE_F5|VM_INDEXED_SPRITE_TAGS|VM_INDEXED_CROP_F3))),reader?reader->read_pixel:nullptr,reader?reader->context:nullptr};
     if(crop){v.camera.position(source->width,source->height,micros());s.crop_x=v.camera.x;s.crop_y=v.camera.y;}
+    s.rad_f1=(v.geometry&VM_INDEXED_RAD_F1)!=0;
     if(dirtyRaster)s.dirty_cells=reinterpret_cast<VmIndexedDirtyRasterFrame *>(source)->source_dirty;
     bool changed=true;
     const bool rendered=v.full?v.converter->renderFull(s,*v.full,&changed):
@@ -164,6 +192,9 @@ static FLASHMEM VmVideoResult submitIndexedVideo(VmIndexedFrame *source){
 }
 static FLASHMEM bool indexedVideoPacket(VmPacket &packet){
     auto &v=indexedVideo;if(v.phase!=1&&v.phase!=3&&v.phase!=5&&v.phase!=7)return false;
+#if defined(MPE_DOS_NUFLIX)
+    if(v.nuflix){packet={};packet.type=5;packet.length=3;packet.payload[0]=v.phase==1?1:v.phase==3?2:v.phase==5?3:4;packet.payload[1]=2;packet.payload[2]=16;return true;}
+#endif
     packet={};packet.type=5;packet.length=3;
     packet.payload[0]=v.phase==1?1:v.phase==3?2:v.phase==5?3:4;
     packet.payload[1]=v.frame->mode;packet.payload[2]=(v.frame->mask!=0)|(v.frame->overlays?4:0)|(v.frame->multicolor?8:0)|((v.phase==5||v.phase==7)?v.targetBank<<1:0);
@@ -171,6 +202,9 @@ static FLASHMEM bool indexedVideoPacket(VmPacket &packet){
     return true;
 }
 static FLASHMEM bool transferIndexedVideo(){
+#if defined(MPE_DOS_NUFLIX)
+    if(indexedVideo.nuflix)return transferNuflix();
+#endif
 #if defined(FeatVMVideoDMA) && defined(Fab04_FullDMACapable)
     auto &v=indexedVideo;if((videoTiming&0xfc)!=0x80)return false;
     nS_DMASetup=(videoTiming&1)?Def_nS_DMASetupNTSC:Def_nS_DMASetupPAL;
@@ -239,6 +273,9 @@ static FLASHMEM bool transferIndexedVideo(){
 // Upload only to the inactive bank, in bounded vertical-border grants. No
 // DEN clear and no stopping the raster kernel during a visible scanline.
 static FLASHMEM bool transferIndexedVideoSlice(){
+#if defined(MPE_DOS_NUFLIX)
+    if(indexedVideo.nuflix)return transferNuflixSlice();
+#endif
 #if defined(FeatVMVideoDMA) && defined(Fab04_FullDMACapable)
     auto &v=indexedVideo;if(!videoBorderGrant)return true;
     const uint32_t stamp=videoBorderCycles;videoBorderGrant=false;

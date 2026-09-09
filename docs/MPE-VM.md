@@ -77,7 +77,7 @@ or publish anything. Use a short output directory because the Windows ARM
 toolchain still encounters path-length limits. Each run has its own directory;
 `latest.json` identifies its HEX, hashes, source inputs and memory layout.
 
-The output is named `TeensyROM+_0.8.0.4_MPE-1.2.1_full.hex` for this upstream
+The output is named `TeensyROM+_0.8.0.4_MPE-1.2.2-NUFLIX_full.hex` for this upstream
 revision. The visible stock firmware version remains unchanged; identify this
 review build by its filename and SHA-256. The original stock build script is
 unchanged. For comparison builds with the isolated builder:
@@ -127,10 +127,11 @@ testing. Build success and memory bounds do not establish that acceptance.
 Base: upstream `442aaaa266f3306ba30dd925235939ee3878db77`, with Travis's
 `mpe-vm-review` fixes through `0997c5a066f87f8f6528ed3887684a80c5af17a9`.
 Shared MPE code: Custom GUI revision
-`8024a9107f24b586ed4ffad7cae541cfe59e7d37`, ABI 2, shared host version 1.2.1.
-This includes the opt-in auxiliary RAM profile used for 640K DOS and the
-accepted fitted full-height F5 transport, including dirty updates and bounded
-transfer slices. The auxiliary profile retires the VM image's CRT swap arena;
+`9585d08136935877aed84255129ae0bccb9c56ff`, ABI 2, shared host version 1.2.2.
+This includes the opt-in auxiliary RAM profile used for 640K DOS, full-width
+320x200 NUFLIX double-buffer transport, dirty updates and SID sideband servicing
+during uploads. Older negotiated video profiles remain. RAD-Doom F1 conversion
+and immutable RAM2 video sources are also supported. The auxiliary profile retires the VM image's CRT swap arena;
 the ordinary images retain their existing cartridge swap behavior. VM engines,
 mouse clients and game data remain separate packages. No payload is imported here.
 See [source-lock.json](../mpe/source-lock.json) for the imported file hashes.
@@ -149,9 +150,42 @@ Six existing upstream files receive guarded hooks:
 - `ISRs.c` and `IOH_EasyFlash.c`: compile VM-only DMA/IO2/poll hooks into the
   dedicated host. Those hooks are absent from the ordinary firmware images.
 
+The 1.2.2 update additionally touches `Teensy.ino`, `FlashUpdate.ino` and the
+existing `Flash/FXUtil.cpp` / `.h`: a TR+ two-button recovery check runs before
+the menu starts, and the ordinary updater rejects malformed/truncated Intel
+HEX, bad record checksums, out-of-range images, missing target IDs and trailing
+data. This uses the existing flasher, not a GUI update dialog. Early release or
+missing SD/image returns to normal startup. Menu-only behavior is retained.
+
 No C64 menu code, menu assets, EEPROM map, stock MinimalBoot configuration,
 cartridge loader or Magic Desk 2 implementation is replaced. No historical
 monolithic emulator patches or Custom GUI desktop services are included.
+
+RAD-Doom-derived conversion is GPL-3.0-or-later. Its full license, attribution,
+generators and corresponding adaptation source accompany this review; the
+combined MPE firmware must not be described as MIT-only. Travis's original MIT
+license and the MIT notices for MPE/NUFLIX remain intact. See
+[firmware notices](MPE-FIRMWARE-NOTICES.md).
+
+## Two-button SD recovery (TR+ Fab0.4)
+
+This route is available only after firmware containing it has been installed
+and only while the firmware can reach its normal startup code.
+
+1. Put a trusted, known-good **full TeensyROM+ HEX** at the SD root named
+   `RESTORE.HEX`. Do not use a module, partial image or original-TR firmware.
+2. With power off, hold the cartridge **Menu and Alternate/Special buttons**.
+3. Power on and keep both held continuously for ten seconds; the LED blinks
+   during the hold. The C64 remains in reset, so a black screen is expected.
+4. Release the buttons after the hold and let validation/programming finish.
+   Do not interrupt power or remove SD. Successful programming reboots.
+
+Releasing early cancels. Missing SD/file or rejected firmware continues normal
+startup; diagnostic messages go to USB serial, not a C64 menu acknowledgment.
+This does not use the white PJRC Program button. If firmware cannot start, use
+the PJRC USB hardware-loader recovery path instead. This is not power-loss-safe
+dual-image rollback, and malformed-file validation is not image authenticity.
+The procedure and updater still require physical confirmation on this build.
 
 ## Verification
 
@@ -179,6 +213,6 @@ input, sound, reset/menu return, missing SD and interrupted launch recovery,
 normal/large CRTs including active bank swapping, stock networking/USB/MIDI,
 REU/freezer/KERNAL functionality, settings retention and the firmware updater.
 Compare with the unmodified build on the same hardware. See the accompanying
-[current retest results](MPE-RETEST-1.2.1.md) for measured evidence and
+[current retest results](MPE-RETEST-1.2.2.md) for measured evidence and
 remaining checks. The [initial review1 results](MPE-REVIEW-RESULTS.md) are retained
 as historical baseline evidence.
